@@ -1,0 +1,40 @@
+version: '3.10'
+
+services:
+  web:
+    build: .
+    ports:
+      - 8000:8000
+    env_file:
+      - ./.env
+    depends_on:
+      - mongodb
+    restart: on-failure
+
+  mongodb:
+    image: mongo:5.0.7-focal
+    env_file:
+      - ./.env
+    volumes:
+      - mongodb_data:/data/db
+    restart: on-failure
+
+  celery:
+    build: .
+    env_file:
+      - ./.env
+    command: celery -A forecast.celery worker -l info -B
+    depends_on:
+      - redis
+    restart: on-failure
+
+  redis:
+    image: redis:6.0.14
+    volumes:
+      - redis_data:/data/
+    restart: on-failure
+
+
+volumes:
+  mongodb_data:
+  redis_data:

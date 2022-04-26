@@ -13,6 +13,8 @@ https://docs.djangoproject.com/en/4.0/ref/settings/
 from pathlib import Path
 from os import environ as env
 
+from mongoengine import connect
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -22,12 +24,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = env["SECRET_KEY"]
+SECRET_KEY = env.get("SECRET_KEY", "*FgbQ%XHtXtM4lOKg$6cjq2wyD@Lym*$4kuuaZwWn**dxiH&o")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = env.get("ALLOWED_HOSTS", ["*"]).split(",")
 
 
 # Application definition
@@ -39,6 +41,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+
+    'metoffice',
 ]
 
 MIDDLEWARE = [
@@ -74,12 +78,16 @@ WSGI_APPLICATION = 'forecast.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/4.0/ref/settings/#databases
-
+username = env.get("MONGO_INITDB_ROOT_USERNAME", "mongodb_username")
+password = env.get("MONGO_INITDB_ROOT_PASSWORD", "mongodb_password")
+host = env.get("MONGO_HOST", "mongodb")
+port = env.get("MONGO_INITDB_PORT", 27017)
+db = env.get("MONGO_INITDB_DATABASE", "mongodb_db")
+connect(host=f"mongodb://{username}:{password}@{host}:{port}/{db}?authSource=admin", connect=False)
 
 
 # Password validation
 # https://docs.djangoproject.com/en/4.0/ref/settings/#auth-password-validators
-
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
     {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
@@ -90,22 +98,20 @@ AUTH_PASSWORD_VALIDATORS = [
 
 # Internationalization
 # https://docs.djangoproject.com/en/4.0/topics/i18n/
-
 LANGUAGE_CODE = 'en-us'
-
 TIME_ZONE = 'UTC'
-
 USE_I18N = True
-
 USE_TZ = True
 
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.0/howto/static-files/
-
 STATIC_URL = 'static/'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.0/ref/settings/#default-auto-field
-
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Celery
+CELERY_RESULT_BACKEND = f'redis://{env.get("REDIS_HOST", "redis")}:6379'
+CELERY_BROKER_URL = f'redis://{env.get("REDIS_HOST", "redis")}:6379'
