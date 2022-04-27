@@ -46,15 +46,4 @@ class ForecastDataListAPIView(ListAPIView):
     def filter_queryset(self, queryset):
         """original method. Heavily modified to use different filter lookup types of requests."""
         kwargs = self.get_kwargs_for_queryset_filtering()
-
-        try:
-            return queryset.filter(**kwargs)
-        except (FieldError, ValidationError) as error:
-            # FieldError may appear, for example, when user send "name__blabla=test" instead of "name__exact=test",
-            # of course there is no lookup type "blabla" and database can't work with that query request.
-            # ValidationError appear if user send wrong data in date/time, UUID types of fields
-            self.request.user.search_filters.pop(self.table_or_form_name, None)
-            self.request.user.save(update_fields=['search_filters'])
-            detail = {"search request was broken": "you used search parameters, that can't be applied to database",
-                      "the error text": str(error)}
-            raise ParseError(detail=detail, code=400)
+        return queryset.filter(**kwargs)
