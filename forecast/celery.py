@@ -68,9 +68,9 @@ def parse_metoffice():
                     continue
 
                 year = row[0]
-                months = row[1:13]
+                months_values = row[1:13]
 
-                for month, value in enumerate(months):
+                for month, value in enumerate(months_values):
                     ForecastData.objects.create(
                         value = value,
                         year = year,
