@@ -1,4 +1,5 @@
 from os import environ as env
+from sys import set_asyncgen_hooks
 
 from celery import Celery
 from celery.schedules import crontab
@@ -19,8 +20,8 @@ def setup_periodic_tasks(sender, **kwargs):
 @app.task
 def parse_metoffice():
     from requests import request
-    import pandas as pd
-
+    import re
+    from metoffice.models import ForecastData
 
     regions = [
         'UK',
@@ -41,7 +42,6 @@ def parse_metoffice():
         'England_SW_and_S_Wales',
         'England_SE_and_Central_S'
     ]
-
     parameters = [
         'AirFrost',
         'Raindays1mm',
@@ -51,9 +51,30 @@ def parse_metoffice():
         'Tmin',
         'Tmax'
     ]
+    months = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec']
 
     for region in regions:
         for parameter in parameters:
             url = f'https://www.metoffice.gov.uk/pub/data/weather/uk/climate/datasets/{parameter}/date/{region}.txt'
-            response = request(url=url, method='GET')
-            content = response.content.decode('utf-8')
+
+            # prepare .txt file to be parsed
+            data = request(url=url, method='GET').content.decode('utf-8')
+            data = data.split('\n')[6:]  # remove first 6 lines of useless data
+
+            # save data into mongodb
+            for row in data:
+                row = re.sub(' +', ' ', row).split(' ')
+                if len(row) != 18:
+                    continue
+
+                year = row[0]
+                months = row[1:13]
+
+                for month, value in enumerate(months):
+                    ForecastData.objects.create(
+                        value = value,
+                        year = year,
+                        month = months[month],
+                        region = region,
+                        parameter = parameter
+                    )
