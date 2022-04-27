@@ -1,9 +1,9 @@
-from mongoengine import Document, StringField, IntField
+from mongoengine import Document, StringField, FloatField, IntField
 
 
 class ForecastData(Document):
     'Store values from www.metoffice.gov.uk'
-    value = IntField()
+    value = FloatField()
     year = IntField()
     month = StringField()
     region = StringField()
